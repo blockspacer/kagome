@@ -94,4 +94,77 @@
 #define EXPECT_OUTCOME_TRUE_MSG(val, expr, msg) \
   EXPECT_OUTCOME_TRUE_MSG_name(UNIQUE_NAME(_r), val, expr, msg)
 
+#define TESTUTIL_OUTCOME_GLUE2(x, y) x##y
+#define TESTUTIL_OUTCOME_GLUE(x, y) TESTUTIL_OUTCOME_GLUE2(x, y)
+#define TESTUTIL_OUTCOME_UNIQUE_NAME TESTUTIL_OUTCOME_GLUE(__outcome_result, __COUNTER__)
+
+#define ASSERT_OUTCOME_SUCCESS_TRY_(result, expr) \
+	auto&& result = (expr); \
+	if (__builtin_expect(result.has_value(), true)); \
+	else GTEST_FATAL_FAILURE_("Outcome of: " #expr) \
+			<< "  Actual:   Error '" << result.error().message() << "'\n" \
+			<< "Expected:   Success";
+
+#define ASSERT_OUTCOME_SUCCESS_(result, val, expr) \
+	ASSERT_OUTCOME_SUCCESS_TRY_(result, expr); \
+	auto&& val = std::move(result.value());
+
+#define ASSERT_OUTCOME_FAILURE_(result, expr) \
+	{ auto&& result = (expr); \
+	if (__builtin_expect(result.has_error(), true)); \
+	else GTEST_FATAL_FAILURE_("Outcome of: " #expr) \
+			<< "  Actual:   Success\n" \
+			<< "Expected:   Some error"; }\
+
+#define EXPECT_OUTCOME_FAILURE_(result, error, expr) \
+	auto&& result = (expr); \
+	if (__builtin_expect(result.has_error(), true)); \
+	else GTEST_NONFATAL_FAILURE_("Outcome of: " #expr) \
+			<< "  Actual:   Success\n" \
+			<< "Expected:   Some error"; \
+	auto&& error = std::move(result.error());
+
+#define ASSERT_OUTCOME_ERROR_(res, expr, error_id) \
+	{ auto&& res = (expr); \
+	if (__builtin_expect(res.has_error(), true)) { \
+	  auto&& expected_error_message = outcome::result<void>(error_id).error().message(); \
+		if (__builtin_expect(res.error().message() == expected_error_message, true)) {} \
+		else GTEST_FATAL_FAILURE_("Outcome of: " #expr) \
+			<< "  Actual:   Error '" << res.error().message() << "'\n" \
+			<< "Expected:   Error '" << outcome::result<void>(error_id).error().message() << "'"; \
+	} else GTEST_FATAL_FAILURE_("Outcome of: " #expr) \
+			<< "  Actual:   Success\n" \
+			<< "Expected:   Error '" << outcome::result<void>(error_id).error().message() << "'"; }\
+
+#define EXPECT_OUTCOME_ERROR_(res, error, expr, error_id) \
+	auto&& res = (expr); \
+	if (__builtin_expect(res.has_error(), true)) { \
+	  auto&& expected_error_message = outcome::result<void>(error_id).error().message(); \
+		if (__builtin_expect(res.error().message() == expected_error_message, true)) {} \
+		else GTEST_NONFATAL_FAILURE_("Outcome of: " #expr) \
+			<< "  Actual:   Error '" << res.error().message() << "'\n" \
+			<< "Expected:   Error '" << outcome::result<void>(error_id).error().message() << "'"; \
+	} else GTEST_NONFATAL_FAILURE_("Outcome of: " #expr) \
+			<< "  Actual:   Success\n" \
+			<< "Expected:   Error '" << outcome::result<void>(error_id).error().message() << "'"; \
+	auto&& error = std::move(result.error());
+
+#define ASSERT_OUTCOME_SUCCESS(variable, expression) \
+	ASSERT_OUTCOME_SUCCESS_(TESTUTIL_OUTCOME_UNIQUE_NAME, variable, expression)
+
+#define ASSERT_OUTCOME_SUCCESS_TRY(expression) \
+	{ ASSERT_OUTCOME_SUCCESS_TRY_(TESTUTIL_OUTCOME_UNIQUE_NAME, expression); }
+
+#define ASSERT_OUTCOME_FAILURE(expression) \
+	{ ASSERT_OUTCOME_FAILURE_(TESTUTIL_OUTCOME_UNIQUE_NAME, expression); }
+
+#define ASSERT_OUTCOME_ERROR(expression, error_id) \
+	{ ASSERT_OUTCOME_ERROR_(TESTUTIL_OUTCOME_UNIQUE_NAME, expression, error_id); }
+
+#define EXPECT_OUTCOME_FAILURE(error, expression) \
+	EXPECT_OUTCOME_FAILURE_(TESTUTIL_OUTCOME_UNIQUE_NAME, error, expression)
+
+#define EXPECT_OUTCOME_ERROR(error, expression, error_id) \
+	EXPECT_OUTCOME_ERROR_(TESTUTIL_OUTCOME_UNIQUE_NAME, error, expression, error_id)
+
 #endif  // KAGOME_GTEST_OUTCOME_UTIL_HPP
