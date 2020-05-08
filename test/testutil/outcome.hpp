@@ -128,7 +128,7 @@
 	{ auto&& res = (expr); \
 	if (__builtin_expect(res.has_error(), true)) { \
 	  auto&& expected_error_message = outcome::result<void>(error_id).error().message(); \
-		if (__builtin_expect(res.error().message() == expected_error_message, true)) {} \
+		if (__builtin_expect(res.error().message() == expected_error_message, true)) {;} /* NOLINT */\
 		else GTEST_FATAL_FAILURE_("Outcome of: " #expr) \
 			<< "  Actual:   Error '" << res.error().message() << "'\n" \
 			<< "Expected:   Error '" << outcome::result<void>(error_id).error().message() << "'"; \
@@ -140,7 +140,7 @@
 	auto&& res = (expr); \
 	if (__builtin_expect(res.has_error(), true)) { \
 	  auto&& expected_error_message = outcome::result<void>(error_id).error().message(); \
-		if (__builtin_expect(res.error().message() == expected_error_message, true)) {} \
+		if (__builtin_expect(res.error().message() == expected_error_message, true)) {;} /* NOLINT */\
 		else GTEST_NONFATAL_FAILURE_("Outcome of: " #expr) \
 			<< "  Actual:   Error '" << res.error().message() << "'\n" \
 			<< "Expected:   Error '" << outcome::result<void>(error_id).error().message() << "'"; \
